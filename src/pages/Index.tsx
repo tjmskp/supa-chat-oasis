@@ -1,14 +1,22 @@
 
 import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '@/contexts/AuthContext';
 
 const Index = () => {
   const navigate = useNavigate();
+  const { user, loading } = useAuth();
 
   useEffect(() => {
-    // Redirect to home page
-    navigate('/');
-  }, [navigate]);
+    if (!loading) {
+      // Redirect authenticated users to dashboard, otherwise to home
+      if (user) {
+        navigate('/dashboard', { replace: true });
+      } else {
+        navigate('/', { replace: true });
+      }
+    }
+  }, [navigate, user, loading]);
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-100">

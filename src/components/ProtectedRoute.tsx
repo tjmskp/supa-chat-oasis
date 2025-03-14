@@ -2,6 +2,7 @@
 import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
+import { toast } from '@/components/ui/use-toast';
 
 type ProtectedRouteProps = {
   children: React.ReactNode;
@@ -13,6 +14,11 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
 
   useEffect(() => {
     if (!loading && !user) {
+      toast({
+        title: "Authentication required",
+        description: "Please sign in to access this page",
+        variant: "destructive",
+      });
       navigate('/signin', { replace: true });
     }
   }, [user, loading, navigate]);
