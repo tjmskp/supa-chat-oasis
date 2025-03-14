@@ -1,19 +1,50 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { Link } from 'react-router-dom';
-import { Check } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
+import { Check, AlertCircle } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 const TryFree = () => {
   const [email, setEmail] = useState('');
   const [fullName, setFullName] = useState('');
   const [company, setCompany] = useState('');
   const [password, setPassword] = useState('');
+  const [accepted, setAccepted] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   
-  const handleSubmit = (e: React.FormEvent) => {
+  const { signUp, user } = useAuth();
+  const navigate = useNavigate();
+  
+  useEffect(() => {
+    // Redirect to dashboard if already authenticated
+    if (user) {
+      navigate('/dashboard');
+    }
+  }, [user, navigate]);
+  
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('Creating account with:', { email, fullName, company, password });
-    // Implement account creation logic
+    
+    if (!accepted) {
+      setError('You must accept the Terms of Service and Privacy Policy to continue.');
+      return;
+    }
+    
+    setError(null);
+    setLoading(true);
+    
+    try {
+      await signUp(email, password, fullName, company);
+      // Navigation is handled by the signUp function
+    } catch (error) {
+      console.error('Sign up error:', error);
+      // Error is handled in the Auth context with toast
+    } finally {
+      setLoading(false);
+    }
   };
   
   return (
@@ -28,6 +59,13 @@ const TryFree = () => {
               <p className="mt-3 text-gray-600">No credit card required. Cancel anytime.</p>
             </div>
             
+            {error && (
+              <Alert variant="destructive" className="mb-6">
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>{error}</AlertDescription>
+              </Alert>
+            )}
+            
             <form onSubmit={handleSubmit} className="space-y-6">
               <div>
                 <label htmlFor="full-name" className="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
@@ -40,6 +78,7 @@ const TryFree = () => {
                   onChange={(e) => setFullName(e.target.value)}
                   className="appearance-none block w-full px-3 py-3 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-brand-blue focus:border-brand-blue sm:text-sm"
                   placeholder="John Smith"
+                  disabled={loading}
                 />
               </div>
               
@@ -55,6 +94,7 @@ const TryFree = () => {
                   onChange={(e) => setEmail(e.target.value)}
                   className="appearance-none block w-full px-3 py-3 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-brand-blue focus:border-brand-blue sm:text-sm"
                   placeholder="john@company.com"
+                  disabled={loading}
                 />
               </div>
               
@@ -68,6 +108,7 @@ const TryFree = () => {
                   onChange={(e) => setCompany(e.target.value)}
                   className="appearance-none block w-full px-3 py-3 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-brand-blue focus:border-brand-blue sm:text-sm"
                   placeholder="Acme Inc."
+                  disabled={loading}
                 />
               </div>
               
@@ -83,6 +124,7 @@ const TryFree = () => {
                   onChange={(e) => setPassword(e.target.value)}
                   className="appearance-none block w-full px-3 py-3 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-brand-blue focus:border-brand-blue sm:text-sm"
                   placeholder="Create a strong password"
+                  disabled={loading}
                 />
               </div>
               
@@ -92,7 +134,9 @@ const TryFree = () => {
                   name="terms"
                   type="checkbox"
                   className="h-4 w-4 text-brand-blue focus:ring-brand-blue border-gray-300 rounded mt-1"
-                  required
+                  checked={accepted}
+                  onChange={(e) => setAccepted(e.target.checked)}
+                  disabled={loading}
                 />
                 <label htmlFor="terms" className="ml-2 block text-sm text-gray-600">
                   I agree to the{' '}
@@ -110,8 +154,9 @@ const TryFree = () => {
                 <Button
                   type="submit"
                   className="w-full bg-brand-blue hover:bg-brand-light-blue py-3"
+                  disabled={loading}
                 >
-                  Create Free Account
+                  {loading ? 'Creating Account...' : 'Create Free Account'}
                 </Button>
               </div>
             </form>

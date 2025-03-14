@@ -1,27 +1,60 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { Link } from 'react-router-dom';
-import { Facebook, Mail } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
+import { Facebook, Mail, AlertCircle } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 const SignIn = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const { signIn, googleSignIn, facebookSignIn, user } = useAuth();
+  const navigate = useNavigate();
   
-  const handleSubmit = (e: React.FormEvent) => {
+  useEffect(() => {
+    // Redirect to dashboard if already authenticated
+    if (user) {
+      navigate('/dashboard');
+    }
+  }, [user, navigate]);
+  
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('Sign in with:', { email, password });
-    // Implement auth login logic here
+    setError(null);
+    setLoading(true);
+    
+    try {
+      await signIn(email, password);
+      // Navigation is handled by auth state change listener
+    } catch (error) {
+      console.error('Sign in error:', error);
+      // Error is handled in the Auth context with toast
+    } finally {
+      setLoading(false);
+    }
   };
   
-  const handleGoogleSignIn = () => {
-    console.log('Sign in with Google');
-    // Implement Google auth login
+  const handleGoogleSignIn = async () => {
+    setError(null);
+    try {
+      await googleSignIn();
+    } catch (error) {
+      console.error('Google sign in error:', error);
+      // Error is handled in the Auth context with toast
+    }
   };
   
-  const handleFacebookSignIn = () => {
-    console.log('Sign in with Facebook');
-    // Implement Facebook auth login
+  const handleFacebookSignIn = async () => {
+    setError(null);
+    try {
+      await facebookSignIn();
+    } catch (error) {
+      console.error('Facebook sign in error:', error);
+      // Error is handled in the Auth context with toast
+    }
   };
   
   return (
@@ -32,11 +65,18 @@ const SignIn = () => {
           <h2 className="mt-6 text-2xl font-bold text-gray-900">Sign in to your account</h2>
           <p className="mt-2 text-sm text-gray-600">
             Or{' '}
-            <Link to="/signup" className="text-brand-blue hover:text-brand-light-blue">
+            <Link to="/try-free" className="text-brand-blue hover:text-brand-light-blue">
               create a new account
             </Link>
           </p>
         </div>
+        
+        {error && (
+          <Alert variant="destructive">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
+        )}
         
         <div className="mt-8 space-y-6">
           <div className="space-y-3">
@@ -44,6 +84,7 @@ const SignIn = () => {
               onClick={handleGoogleSignIn}
               variant="outline" 
               className="w-full flex items-center justify-center border-gray-300 hover:bg-gray-50"
+              disabled={loading}
             >
               <svg className="h-5 w-5 mr-2" viewBox="0 0 24 24">
                 <path
@@ -71,6 +112,7 @@ const SignIn = () => {
               onClick={handleFacebookSignIn}
               variant="outline" 
               className="w-full flex items-center justify-center border-gray-300 hover:bg-gray-50"
+              disabled={loading}
             >
               <Facebook className="h-5 w-5 mr-2 text-blue-600" />
               Sign in with Facebook
@@ -100,6 +142,7 @@ const SignIn = () => {
                   onChange={(e) => setEmail(e.target.value)}
                   className="appearance-none rounded-none relative block w-full px-3 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-brand-blue focus:border-brand-blue focus:z-10 sm:text-sm"
                   placeholder="Email address"
+                  disabled={loading}
                 />
               </div>
               <div>
@@ -114,6 +157,7 @@ const SignIn = () => {
                   onChange={(e) => setPassword(e.target.value)}
                   className="appearance-none rounded-none relative block w-full px-3 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-b-md focus:outline-none focus:ring-brand-blue focus:border-brand-blue focus:z-10 sm:text-sm"
                   placeholder="Password"
+                  disabled={loading}
                 />
               </div>
             </div>
@@ -142,8 +186,9 @@ const SignIn = () => {
               <Button
                 type="submit"
                 className="w-full bg-brand-blue hover:bg-brand-light-blue py-3"
+                disabled={loading}
               >
-                Sign in
+                {loading ? 'Signing in...' : 'Sign in'}
               </Button>
             </div>
           </form>
