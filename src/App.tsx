@@ -19,7 +19,7 @@ const queryClient = new QueryClient();
 
 const App = () => {
   // Log Supabase connection info
-  console.log("Connected to Supabase project:", supabase.projectRef);
+  console.log("Connected to Supabase project:", supabase);
 
   return (
     <QueryClientProvider client={queryClient}>
