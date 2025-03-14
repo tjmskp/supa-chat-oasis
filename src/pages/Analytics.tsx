@@ -1,10 +1,10 @@
-
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Calendar, DownloadCloud, BarChart2, TrendingUp, Users, DollarSign, Target, MousePointer } from 'lucide-react';
 import { AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/components/ui/use-toast';
 
-// Mock data for charts
 const performanceData = [
   { date: 'Jan', impressions: 3000, clicks: 1400, conversions: 240 },
   { date: 'Feb', impressions: 4000, clicks: 1800, conversions: 320 },
@@ -24,9 +24,48 @@ const platformData = [
 ];
 
 const Analytics = () => {
+  const { toast } = useToast();
+  const [isLoading, setIsLoading] = useState(false);
+  const [timeframe, setTimeframe] = useState('30d');
+
+  useEffect(() => {
+    const checkSupabaseConnection = async () => {
+      try {
+        setIsLoading(true);
+        const { data, error } = await supabase.from('profiles').select('count');
+        
+        if (error) throw error;
+        
+        console.log('Connected to Supabase successfully');
+        toast({
+          title: "Analytics Ready",
+          description: "Connected to data sources successfully",
+        });
+      } catch (error) {
+        console.error('Supabase connection error:', error);
+        toast({
+          title: "Connection Issue",
+          description: "Could not connect to analytics data source",
+          variant: "destructive",
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    checkSupabaseConnection();
+  }, [toast]);
+
+  const handleTimeframeChange = (newTimeframe: string) => {
+    setTimeframe(newTimeframe);
+    toast({
+      title: "Timeframe Updated",
+      description: `Showing data for the last ${newTimeframe === '7d' ? '7 days' : newTimeframe === '30d' ? '30 days' : '90 days'}`,
+    });
+  };
+
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header */}
       <div className="bg-white border-b border-gray-200 p-6">
         <div className="container mx-auto max-w-7xl">
           <h1 className="text-2xl font-bold">Analytics Dashboard</h1>
@@ -34,15 +73,36 @@ const Analytics = () => {
         </div>
       </div>
 
-      {/* Filters */}
       <div className="container mx-auto max-w-7xl py-6 px-4">
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 mb-8">
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div className="flex items-center space-x-4">
-              <Button variant="outline" className="flex items-center border-gray-300">
-                <Calendar className="h-4 w-4 mr-2" />
-                Last 30 Days
-              </Button>
+              <div className="space-x-2">
+                <Button 
+                  variant={timeframe === '7d' ? "default" : "outline"} 
+                  size="sm" 
+                  className={timeframe !== '7d' ? "border-gray-300 text-sm" : "text-sm"}
+                  onClick={() => handleTimeframeChange('7d')}
+                >
+                  Last 7 Days
+                </Button>
+                <Button 
+                  variant={timeframe === '30d' ? "default" : "outline"} 
+                  size="sm" 
+                  className={timeframe !== '30d' ? "border-gray-300 text-sm" : "text-sm"}
+                  onClick={() => handleTimeframeChange('30d')}
+                >
+                  Last 30 Days
+                </Button>
+                <Button 
+                  variant={timeframe === '90d' ? "default" : "outline"} 
+                  size="sm" 
+                  className={timeframe !== '90d' ? "border-gray-300 text-sm" : "text-sm"}
+                  onClick={() => handleTimeframeChange('90d')}
+                >
+                  Last 90 Days
+                </Button>
+              </div>
               <div className="space-x-2">
                 <Button variant="outline" size="sm" className="border-gray-300 text-sm">Meta Ads</Button>
                 <Button variant="outline" size="sm" className="border-gray-300 text-sm">Google Ads</Button>
@@ -57,7 +117,6 @@ const Analytics = () => {
         </div>
       </div>
 
-      {/* KPI Cards */}
       <div className="container mx-auto max-w-7xl px-4 mb-8">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-5">
@@ -126,10 +185,8 @@ const Analytics = () => {
         </div>
       </div>
 
-      {/* Charts */}
       <div className="container mx-auto max-w-7xl px-4 mb-8">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          {/* Performance Trends */}
           <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
             <div className="flex items-center justify-between mb-6">
               <div>
@@ -154,7 +211,6 @@ const Analytics = () => {
             </div>
           </div>
           
-          {/* Platform Performance */}
           <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
             <div className="flex items-center justify-between mb-6">
               <div>
@@ -181,7 +237,6 @@ const Analytics = () => {
         </div>
       </div>
 
-      {/* Campaign Performance Table */}
       <div className="container mx-auto max-w-7xl px-4 pb-12">
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
           <div className="flex items-center justify-between mb-6">

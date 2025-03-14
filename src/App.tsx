@@ -13,16 +13,13 @@ import Analytics from "./pages/Analytics";
 import SignIn from "./pages/SignIn";
 import TryFree from "./pages/TryFree";
 import NotFound from "./pages/NotFound";
+import { supabase } from "./integrations/supabase/client";
 
 const queryClient = new QueryClient();
 
 const App = () => {
-  // Get the API keys
-  const supabaseUrl = "https://kpidficztwxiupmtgijo.supabase.co";
-  const supabaseAnonKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtwaWRmaWN6dHd4aXVwbXRnaWpvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDE5MDYyMzUsImV4cCI6MjA1NzQ4MjIzNX0.Jgx72ODwxppI90pzE9zGHwexXUrqeJeFQU6D6NuStSg";
-  
-  console.log("Supabase URL:", supabaseUrl);
-  console.log("Supabase Anon Key:", supabaseAnonKey);
+  // Log Supabase connection info
+  console.log("Connected to Supabase project:", supabase.projectRef);
 
   return (
     <QueryClientProvider client={queryClient}>
@@ -43,9 +40,14 @@ const App = () => {
               />
               <Route 
                 path="/dashboard" 
+                element={<Dashboard />} 
+              />
+              <Route 
+                path="/analytics" 
                 element={
                   <>
-                    <Dashboard />
+                    <NavBar />
+                    <Analytics />
                   </>
                 } 
               />
@@ -67,14 +69,10 @@ const App = () => {
                   </>
                 } 
               />
+              {/* Add the dashboard/analytics route */}
               <Route 
-                path="/analytics" 
-                element={
-                  <>
-                    <NavBar />
-                    <Analytics />
-                  </>
-                } 
+                path="/dashboard/analytics" 
+                element={<Dashboard />} 
               />
               <Route path="/signin" element={<SignIn />} />
               <Route path="/try-free" element={<TryFree />} />
