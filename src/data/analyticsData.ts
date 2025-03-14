@@ -21,7 +21,7 @@ export const campaignData = [
   {
     name: 'Summer Sale 2023',
     platform: 'Facebook',
-    status: 'Active',
+    status: 'Active' as const,
     impressions: 485291,
     ctr: '3.8%',
     conversions: 423,
@@ -31,7 +31,7 @@ export const campaignData = [
   {
     name: 'New Product Launch',
     platform: 'Google',
-    status: 'Active',
+    status: 'Active' as const,
     impressions: 328582,
     ctr: '4.2%',
     conversions: 312,
@@ -41,7 +41,7 @@ export const campaignData = [
   {
     name: 'Brand Awareness Q3',
     platform: 'Instagram',
-    status: 'Active',
+    status: 'Active' as const,
     impressions: 642104,
     ctr: '2.9%',
     conversions: 287,
@@ -51,7 +51,7 @@ export const campaignData = [
   {
     name: 'Holiday Special',
     platform: 'YouTube',
-    status: 'Scheduled',
+    status: 'Scheduled' as const,
     impressions: 0,
     ctr: '-',
     conversions: '-',
@@ -61,7 +61,7 @@ export const campaignData = [
   {
     name: 'Spring Collection',
     platform: 'Google',
-    status: 'Ended',
+    status: 'Ended' as const,
     impressions: 582943,
     ctr: '3.4%',
     conversions: 498,
