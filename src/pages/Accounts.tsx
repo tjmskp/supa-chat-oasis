@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Facebook, Globe, PlusCircle, Check, AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -30,6 +29,7 @@ const Accounts = () => {
 
   const fetchConnectedAccounts = async () => {
     try {
+      // Fetch Meta accounts
       const { data: metaData, error: metaError } = await supabase
         .from('connected_accounts')
         .select('*')
@@ -37,8 +37,9 @@ const Accounts = () => {
         .eq('platform', 'meta');
 
       if (metaError) throw metaError;
-      setMetaAccounts(metaData || []);
+      setMetaAccounts(metaData as ConnectedAccount[] || []);
 
+      // Fetch Google accounts
       const { data: googleData, error: googleError } = await supabase
         .from('connected_accounts')
         .select('*')
@@ -46,7 +47,7 @@ const Accounts = () => {
         .eq('platform', 'google');
 
       if (googleError) throw googleError;
-      setGoogleAccounts(googleData || []);
+      setGoogleAccounts(googleData as ConnectedAccount[] || []);
     } catch (error) {
       console.error('Error fetching connected accounts:', error);
       toast({

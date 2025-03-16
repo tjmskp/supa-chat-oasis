@@ -9,6 +9,45 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      connected_accounts: {
+        Row: {
+          account_id: string
+          auth_token: string | null
+          connected_at: string
+          id: string
+          name: string
+          platform: string
+          refresh_token: string | null
+          status: string
+          token_expires_at: string | null
+          user_id: string
+        }
+        Insert: {
+          account_id: string
+          auth_token?: string | null
+          connected_at?: string
+          id?: string
+          name: string
+          platform: string
+          refresh_token?: string | null
+          status?: string
+          token_expires_at?: string | null
+          user_id: string
+        }
+        Update: {
+          account_id?: string
+          auth_token?: string | null
+          connected_at?: string
+          id?: string
+          name?: string
+          platform?: string
+          refresh_token?: string | null
+          status?: string
+          token_expires_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
