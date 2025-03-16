@@ -1,6 +1,6 @@
 
 import React, { useEffect } from 'react';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth } from '@/contexts/auth';
 import AccountLayout from '@/components/accounts/AccountLayout';
 import MetaAccountsSection from '@/components/accounts/MetaAccountsSection';
 import GoogleAccountsSection from '@/components/accounts/GoogleAccountsSection';
