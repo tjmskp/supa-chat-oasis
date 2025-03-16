@@ -1,0 +1,8 @@
+
+project_id = "ouxcwjehkkpenqzolwdc"
+
+[meta-auth-exchange]
+verify_jwt = true
+
+[google-auth-exchange]
+verify_jwt = true

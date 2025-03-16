@@ -17,6 +17,8 @@ import TryFree from "./pages/TryFree";
 import NotFound from "./pages/NotFound";
 import UserProfile from "./pages/UserProfile";
 import Index from "./pages/Index";
+import MetaAuthCallback from "./pages/MetaAuthCallback";
+import GoogleAuthCallback from "./pages/GoogleAuthCallback";
 
 const queryClient = new QueryClient();
 
@@ -94,6 +96,8 @@ const App = () => {
                 />
                 <Route path="/signin" element={<SignIn />} />
                 <Route path="/try-free" element={<TryFree />} />
+                <Route path="/meta-auth-callback" element={<MetaAuthCallback />} />
+                <Route path="/google-auth-callback" element={<GoogleAuthCallback />} />
                 <Route path="*" element={<NotFound />} />
               </Routes>
             </div>
