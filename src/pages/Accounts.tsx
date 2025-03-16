@@ -1,14 +1,18 @@
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import AccountLayout from '@/components/accounts/AccountLayout';
 import MetaAccountsSection from '@/components/accounts/MetaAccountsSection';
 import GoogleAccountsSection from '@/components/accounts/GoogleAccountsSection';
 import ApiConnectionSettings from '@/components/accounts/ApiConnectionSettings';
 import { useAccountsManagement } from '@/hooks/useAccountsManagement';
+import { useNavigate } from 'react-router-dom';
+import { toast } from '@/components/ui/use-toast';
 
 const Accounts = () => {
   const { user } = useAuth();
+  const navigate = useNavigate();
+
   const {
     metaAccounts,
     googleAccounts,
@@ -18,6 +22,37 @@ const Accounts = () => {
     connectGoogleAccount,
     disconnectAccount
   } = useAccountsManagement(user?.id);
+
+  useEffect(() => {
+    // Check for redirect after auth from localStorage
+    const redirectAfterAuth = localStorage.getItem('redirectAfterAuth');
+    if (redirectAfterAuth) {
+      // Clear the redirect flag
+      localStorage.removeItem('redirectAfterAuth');
+      
+      // Show success message
+      toast({
+        title: 'Authentication Successful',
+        description: 'You have been redirected back to your accounts page.',
+      });
+    }
+  }, []);
+
+  // Redirect to sign in if not authenticated
+  useEffect(() => {
+    if (user === null) {
+      toast({
+        title: 'Authentication Required',
+        description: 'Please sign in to manage your ad accounts.',
+        variant: 'destructive',
+      });
+      navigate('/signin');
+    }
+  }, [user, navigate]);
+
+  if (!user) {
+    return null; // Don't render anything while redirecting
+  }
 
   return (
     <AccountLayout>

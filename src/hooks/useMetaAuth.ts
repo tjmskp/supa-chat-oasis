@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/components/ui/use-toast';
 import { ConnectedAccount } from '@/components/accounts/types';
@@ -8,10 +8,11 @@ export const useMetaAuth = (userId: string | undefined) => {
   const [metaAccounts, setMetaAccounts] = useState<ConnectedAccount[]>([]);
   const [isLoadingMeta, setIsLoadingMeta] = useState(false);
 
-  const fetchMetaAccounts = async () => {
+  const fetchMetaAccounts = useCallback(async () => {
     if (!userId) return;
     
     try {
+      setIsLoadingMeta(true);
       const { data, error } = await supabase
         .from('connected_accounts')
         .select('*')
@@ -27,10 +28,28 @@ export const useMetaAuth = (userId: string | undefined) => {
         description: 'Failed to fetch Meta accounts',
         variant: 'destructive',
       });
+    } finally {
+      setIsLoadingMeta(false);
     }
-  };
+  }, [userId]);
+
+  // Load accounts when userId changes
+  useEffect(() => {
+    if (userId) {
+      fetchMetaAccounts();
+    }
+  }, [userId, fetchMetaAccounts]);
 
   const connectMetaAccount = async () => {
+    if (!userId) {
+      toast({
+        title: 'Authentication Required',
+        description: 'Please sign in to connect your Meta account',
+        variant: 'destructive',
+      });
+      return;
+    }
+
     setIsLoadingMeta(true);
     try {
       // Store the current URL to redirect back after auth
@@ -49,11 +68,15 @@ export const useMetaAuth = (userId: string | undefined) => {
       const left = (window.innerWidth - width) / 2;
       const top = (window.innerHeight - height) / 2;
       
-      window.open(
+      const authWindow = window.open(
         authUrl,
         'Meta Authentication',
         `width=${width},height=${height},top=${top},left=${left}`
       );
+      
+      if (!authWindow) {
+        throw new Error('Popup blocked. Please allow popups for this site.');
+      }
 
       // The rest will be handled by the callback page and event listeners
       window.addEventListener('message', handleMetaAuthCallback, false);
@@ -61,10 +84,9 @@ export const useMetaAuth = (userId: string | undefined) => {
       console.error('Error connecting Meta account:', error);
       toast({
         title: 'Connection Failed',
-        description: 'Failed to connect your Meta account',
+        description: error instanceof Error ? error.message : 'Failed to connect your Meta account',
         variant: 'destructive',
       });
-    } finally {
       setIsLoadingMeta(false);
     }
   };
@@ -74,12 +96,10 @@ export const useMetaAuth = (userId: string | undefined) => {
     if (event.origin !== window.location.origin) return;
     
     if (event.data.type === 'META_AUTH_SUCCESS') {
-      window.removeEventListener('message', handleMetaAuthCallback);
-      
-      // Process the successful authentication
-      const { code } = event.data;
-      
       try {
+        // Process the successful authentication
+        const { code } = event.data;
+        
         // Call the edge function to exchange the code for tokens and account info
         const { data, error } = await supabase.functions.invoke('meta-auth-exchange', {
           body: { code, userId }
@@ -101,14 +121,18 @@ export const useMetaAuth = (userId: string | undefined) => {
           description: 'Failed to process Meta account authentication',
           variant: 'destructive',
         });
+      } finally {
+        window.removeEventListener('message', handleMetaAuthCallback);
+        setIsLoadingMeta(false);
       }
     } else if (event.data.type === 'META_AUTH_ERROR') {
-      window.removeEventListener('message', handleMetaAuthCallback);
       toast({
         title: 'Connection Failed',
         description: event.data.message || 'Failed to connect your Meta account',
         variant: 'destructive',
       });
+      window.removeEventListener('message', handleMetaAuthCallback);
+      setIsLoadingMeta(false);
     }
   };
 

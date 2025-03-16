@@ -1,5 +1,5 @@
 
-import { useEffect } from 'react';
+import { useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/components/ui/use-toast';
 import { useMetaAuth } from './useMetaAuth';
@@ -20,23 +20,29 @@ export const useAccountsManagement = (userId: string | undefined) => {
     fetchGoogleAccounts 
   } = useGoogleAuth(userId);
 
-  useEffect(() => {
+  const fetchConnectedAccounts = useCallback(() => {
     if (userId) {
-      fetchConnectedAccounts();
+      fetchMetaAccounts();
+      fetchGoogleAccounts();
     }
-  }, [userId]);
-
-  const fetchConnectedAccounts = async () => {
-    fetchMetaAccounts();
-    fetchGoogleAccounts();
-  };
+  }, [userId, fetchMetaAccounts, fetchGoogleAccounts]);
 
   const disconnectAccount = async (id: string, platform: string) => {
+    if (!userId) {
+      toast({
+        title: 'Authentication Required',
+        description: 'Please sign in to manage your accounts',
+        variant: 'destructive',
+      });
+      return;
+    }
+
     try {
       const { error } = await supabase
         .from('connected_accounts')
         .delete()
-        .eq('id', id);
+        .eq('id', id)
+        .eq('user_id', userId); // Ensure user can only delete their own accounts
       
       if (error) throw error;
       
@@ -64,6 +70,7 @@ export const useAccountsManagement = (userId: string | undefined) => {
     isLoadingGoogle,
     connectMetaAccount,
     connectGoogleAccount,
-    disconnectAccount
+    disconnectAccount,
+    fetchConnectedAccounts
   };
 };

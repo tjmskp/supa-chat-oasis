@@ -6,4 +6,5 @@ export interface ConnectedAccount {
   status: 'active' | 'expired';
   connected_at: string;
   account_id: string;
+  user_id?: string;
 }
