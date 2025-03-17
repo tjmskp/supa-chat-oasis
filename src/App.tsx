@@ -1,10 +1,9 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import { AuthProvider } from "./contexts/auth";
+import { AuthProvider } from "./contexts/AuthContext";
 import ProtectedRoute from "./components/ProtectedRoute";
 import NavBar from "./components/NavBar";
 import Home from "./pages/Home";
@@ -18,7 +17,7 @@ import NotFound from "./pages/NotFound";
 import UserProfile from "./pages/UserProfile";
 import Index from "./pages/Index";
 import MetaAuthCallback from "./pages/MetaAuthCallback";
-import GoogleAuthCallback from "./pages/GoogleAuthCallback";
+import AuthCallback from "./pages/AuthCallback";
 
 const queryClient = new QueryClient();
 
@@ -97,7 +96,7 @@ const App = () => {
                 <Route path="/signin" element={<SignIn />} />
                 <Route path="/try-free" element={<TryFree />} />
                 <Route path="/meta-auth-callback" element={<MetaAuthCallback />} />
-                <Route path="/google-auth-callback" element={<GoogleAuthCallback />} />
+                <Route path="/auth/callback" element={<AuthCallback />} />
                 <Route path="*" element={<NotFound />} />
               </Routes>
             </div>
