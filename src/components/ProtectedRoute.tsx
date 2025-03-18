@@ -1,39 +1,76 @@
-import { useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useAuth } from '@/contexts/AuthContext';
+import { useEffect, useState } from 'react';
+import { Navigate, useLocation } from 'react-router-dom';
+import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/components/ui/use-toast';
+import { Loader2 } from 'lucide-react';
 
-type ProtectedRouteProps = {
+interface ProtectedRouteProps {
   children: React.ReactNode;
-};
+}
 
 const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
-  const { user, loading } = useAuth();
-  const navigate = useNavigate();
+  const [loading, setLoading] = useState(true);
+  const [authenticated, setAuthenticated] = useState(false);
+  const location = useLocation();
 
   useEffect(() => {
-    if (!loading && !user) {
-      toast({
-        title: "Authentication required",
-        description: "Please sign in to access this page",
-        variant: "destructive",
-      });
-      navigate('/signin', { replace: true });
-    }
-  }, [user, loading, navigate]);
+    const checkAuth = async () => {
+      try {
+        const { data: { session }, error } = await supabase.auth.getSession();
+        
+        if (error) {
+          throw error;
+        }
+
+        if (!session) {
+          // Store the current path for redirect after auth
+          localStorage.setItem('redirectAfterAuth', location.pathname);
+          toast({
+            title: "Authentication Required",
+            description: "Please sign in to access this page.",
+            duration: 5000,
+          });
+        }
+
+        setAuthenticated(!!session);
+      } catch (error) {
+        console.error('Auth check error:', error);
+        toast({
+          title: "Authentication Error",
+          description: "There was a problem checking your authentication status.",
+          variant: "destructive",
+          duration: 5000,
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    checkAuth();
+
+    // Set up auth state listener
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setAuthenticated(!!session);
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, [location.pathname]);
 
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-brand-blue mb-4"></div>
-          <p className="text-gray-600">Loading your account...</p>
-        </div>
+        <Loader2 className="h-8 w-8 animate-spin" />
       </div>
     );
   }
 
-  return user ? <>{children}</> : null;
+  if (!authenticated) {
+    return <Navigate to="/sign-in" state={{ from: location }} replace />;
+  }
+
+  return <>{children}</>;
 };
 
 export default ProtectedRoute;

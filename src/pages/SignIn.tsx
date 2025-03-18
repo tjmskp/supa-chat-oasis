@@ -1,17 +1,30 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { toast } from '@/components/ui/use-toast';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { AuthError } from '@supabase/supabase-js';
 
 const SignIn = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+
+  // Check if user is already authenticated
+  useEffect(() => {
+    const checkSession = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.user) {
+        navigate('/dashboard', { replace: true });
+      }
+    };
+    checkSession();
+  }, [navigate]);
 
   const handleEmailSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -28,14 +41,19 @@ const SignIn = () => {
       toast({
         title: "Welcome back!",
         description: "You have successfully signed in.",
+        duration: 5000,
       });
 
-      navigate('/dashboard');
-    } catch (error: any) {
+      navigate('/dashboard', { replace: true });
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message :
+                         error instanceof AuthError ? error.message :
+                         'An error occurred during sign in';
       toast({
         title: "Error signing in",
-        description: error.message,
+        description: errorMessage,
         variant: "destructive",
+        duration: 5000,
       });
     } finally {
       setLoading(false);
@@ -44,7 +62,10 @@ const SignIn = () => {
 
   const handleGoogleSignIn = async () => {
     try {
-      const { error } = await supabase.auth.signInWithOAuth({
+      // Store the current path for redirect after auth
+      localStorage.setItem('redirectAfterAuth', location.pathname);
+
+      const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
           queryParams: {
@@ -56,12 +77,21 @@ const SignIn = () => {
       });
 
       if (error) throw error;
-    } catch (error: any) {
+      
+      // If we have a provider URL, redirect to it
+      if (data?.url) {
+        window.location.href = data.url;
+      }
+    } catch (error: unknown) {
       console.error('Google sign in error:', error);
+      const errorMessage = error instanceof Error ? error.message :
+                         error instanceof AuthError ? error.message :
+                         'Failed to sign in with Google';
       toast({
         title: "Error signing in with Google",
-        description: error.message,
+        description: errorMessage,
         variant: "destructive",
+        duration: 5000,
       });
     }
   };
