@@ -1,65 +1,46 @@
 
-import { useCallback } from 'react';
+import { Toast } from "@/components/ui/toast";
+import { useState, useCallback } from 'react';
+
+export interface ToastProps extends React.ComponentPropsWithoutRef<typeof Toast> {
+  id: string;
+  title?: string;
+  description?: string;
+  action?: React.ReactNode;
+  variant?: "default" | "destructive";
+}
 
 interface ToastOptions {
-  title: string;
-  description: string;
+  title?: string;
+  description?: string;
   type?: 'success' | 'error' | 'info' | 'warning';
   variant?: 'default' | 'destructive';
   duration?: number;
+  action?: React.ReactNode;
 }
 
 export const useToast = () => {
-  const toast = useCallback(({ title, description, type = 'info', variant = 'default', duration = 5000 }: ToastOptions) => {
-    // Create a toast element
-    const toastElement = document.createElement('div');
-    toastElement.className = `fixed bottom-4 right-4 p-4 rounded-lg shadow-lg max-w-md z-50 ${
-      type === 'error' || variant === 'destructive'
-        ? 'bg-red-50 border border-red-200'
-        : type === 'success'
-        ? 'bg-green-50 border border-green-200'
-        : type === 'warning'
-        ? 'bg-yellow-50 border border-yellow-200'
-        : 'bg-blue-50 border border-blue-200'
-    }`;
+  const [toasts, setToasts] = useState<ToastProps[]>([]);
 
-    // Create toast content
-    const content = `
-      <h4 class="font-semibold mb-1 ${
-        type === 'error' || variant === 'destructive'
-          ? 'text-red-800'
-          : type === 'success'
-          ? 'text-green-800'
-          : type === 'warning'
-          ? 'text-yellow-800'
-          : 'text-blue-800'
-      }">${title}</h4>
-      <p class="${
-        type === 'error' || variant === 'destructive'
-          ? 'text-red-600'
-          : type === 'success'
-          ? 'text-green-600'
-          : type === 'warning'
-          ? 'text-yellow-600'
-          : 'text-blue-600'
-      }">${description}</p>
-    `;
+  const toast = useCallback(({ title, description, type = 'info', variant = 'default', duration = 5000, action }: ToastOptions) => {
+    const id = Math.random().toString(36).substring(2, 9);
+    const newToast: ToastProps = {
+      id,
+      title,
+      description,
+      variant: type === 'error' ? 'destructive' : variant,
+      action,
+    };
 
-    toastElement.innerHTML = content;
+    setToasts((toasts) => [...toasts, newToast]);
 
-    // Add to document
-    document.body.appendChild(toastElement);
-
-    // Remove after duration
+    // Auto dismiss
     setTimeout(() => {
-      toastElement.classList.add('opacity-0', 'transition-opacity');
-      setTimeout(() => {
-        document.body.removeChild(toastElement);
-      }, 300);
+      setToasts((toasts) => toasts.filter((t) => t.id !== id));
     }, duration);
   }, []);
 
-  return { toast };
+  return { toast, toasts };
 };
 
 // Add compatibility exports for shadcn UI toast

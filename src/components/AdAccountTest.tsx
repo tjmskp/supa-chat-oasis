@@ -1,7 +1,16 @@
+
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { toast } from '@/components/ui/use-toast';
+
+// Ensure FB SDK types are available
+declare global {
+  interface Window {
+    FB: any;
+    fbAsyncInit: () => void;
+  }
+}
 
 const AdAccountTest = () => {
   const [loading, setLoading] = useState(false);
@@ -23,10 +32,10 @@ const AdAccountTest = () => {
       });
 
       // Get user access token
-      const response = await new Promise<fb.AuthResponse>((resolve, reject) => {
-        window.FB.login((response) => {
+      const response = await new Promise<{ authResponse: { accessToken: string } }>((resolve, reject) => {
+        window.FB.login((response: any) => {
           if (response.authResponse) {
-            resolve(response.authResponse);
+            resolve(response);
           } else {
             reject(new Error('User cancelled login or did not fully authorize.'));
           }
@@ -34,15 +43,15 @@ const AdAccountTest = () => {
       });
 
       // Fetch ad accounts
-      const result = await new Promise((resolve, reject) => {
+      const result = await new Promise<{ data: any[] }>((resolve, reject) => {
         window.FB.api(
           '/me/adaccounts',
           'GET',
           { 
-            access_token: response.accessToken,
+            access_token: response.authResponse.accessToken,
             fields: 'name,account_id,account_status,amount_spent,balance,currency,timezone_name'
           },
-          (response) => {
+          (response: any) => {
             if (!response || response.error) {
               reject(response?.error || new Error('Failed to fetch ad accounts'));
             } else {
@@ -58,7 +67,7 @@ const AdAccountTest = () => {
         title: 'Success',
         description: `Found ${result.data.length} ad accounts`,
       });
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error testing ad accounts:', error);
       toast({
         title: 'Error',
@@ -131,4 +140,4 @@ const AdAccountTest = () => {
   );
 };
 
-export default AdAccountTest; 
+export default AdAccountTest;

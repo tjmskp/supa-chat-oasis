@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 
 interface MetaAdAccount {
@@ -22,16 +23,23 @@ export interface AdAccountData {
 class AdAccountsService {
   // Store connected accounts in Supabase
   async storeConnectedAccount(userId: string, platform: 'meta' | 'google', accountData: any) {
-    const { error } = await supabase
-      .from('connected_accounts')
-      .upsert({
-        user_id: userId,
-        platform,
-        account_data: accountData,
-        connected_at: new Date().toISOString(),
-      });
+    // For each account in the accountData, create a record
+    const accounts = Array.isArray(accountData) ? accountData : [accountData];
+    
+    for (const account of accounts) {
+      const { error } = await supabase
+        .from('connected_accounts')
+        .upsert({
+          user_id: userId,
+          platform,
+          name: account.name || `${platform} Account`,
+          account_id: account.id || account.account_id,
+          status: 'active',
+          connected_at: new Date().toISOString(),
+        });
 
-    if (error) throw error;
+      if (error) throw error;
+    }
   }
 
   // Get user's connected accounts
@@ -50,9 +58,19 @@ class AdAccountsService {
 
     data.forEach(account => {
       if (account.platform === 'meta') {
-        accounts.meta = account.account_data;
+        accounts.meta.push({
+          id: account.account_id,
+          name: account.name,
+          status: account.status,
+          currency: 'USD' // Default currency since it's not in our schema
+        });
       } else if (account.platform === 'google') {
-        accounts.google = account.account_data;
+        accounts.google.push({
+          id: account.account_id,
+          name: account.name,
+          status: account.status,
+          currency: 'USD' // Default currency since it's not in our schema
+        });
       }
     });
 
@@ -120,4 +138,4 @@ class AdAccountsService {
   }
 }
 
-export const adAccountsService = new AdAccountsService(); 
+export const adAccountsService = new AdAccountsService();

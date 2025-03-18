@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -5,6 +6,21 @@ import { toast } from '@/components/ui/use-toast';
 import { adAccountsService, AdAccountData } from '@/services/adAccountsService';
 import { supabase } from '@/integrations/supabase/client';
 import { Loader2 } from 'lucide-react';
+
+// Ensure Google SDK types are available
+declare global {
+  interface Window {
+    google?: {
+      accounts: {
+        oauth2: {
+          initCodeClient: (config: any) => {
+            requestCode: () => void;
+          };
+        };
+      };
+    };
+  }
+}
 
 const AdAccountsConnection = () => {
   const [loading, setLoading] = useState(false);
@@ -37,25 +53,29 @@ const AdAccountsConnection = () => {
     try {
       setLoading(true);
       // Initialize Facebook SDK and trigger login
-      window.FB.login(async (response) => {
-        if (response.authResponse) {
-          const { accessToken } = response.authResponse;
-          const accounts = await adAccountsService.fetchMetaAdAccounts(accessToken);
-          
-          if (userId) {
-            await adAccountsService.storeConnectedAccount(userId, 'meta', accounts);
-            setConnectedAccounts(prev => ({ ...prev, meta: accounts }));
+      if (window.FB) {
+        window.FB.login(async (response: any) => {
+          if (response.authResponse) {
+            const { accessToken } = response.authResponse;
+            const accounts = await adAccountsService.fetchMetaAdAccounts(accessToken);
             
-            toast({
-              title: 'Success',
-              description: 'Meta ad accounts connected successfully',
-            });
+            if (userId) {
+              await adAccountsService.storeConnectedAccount(userId, 'meta', accounts);
+              setConnectedAccounts(prev => ({ ...prev, meta: accounts }));
+              
+              toast({
+                title: 'Success',
+                description: 'Meta ad accounts connected successfully',
+              });
+            }
+          } else {
+            throw new Error('Meta authentication failed');
           }
-        } else {
-          throw new Error('Meta authentication failed');
-        }
-      }, { scope: 'ads_management,ads_read' });
-    } catch (error) {
+        }, { scope: 'ads_management,ads_read' });
+      } else {
+        throw new Error('Facebook SDK not loaded');
+      }
+    } catch (error: any) {
       console.error('Error connecting Meta account:', error);
       toast({
         title: 'Error',
@@ -71,30 +91,34 @@ const AdAccountsConnection = () => {
     try {
       setLoading(true);
       // Initialize Google OAuth client
-      const client = google.accounts.oauth2.initCodeClient({
-        client_id: process.env.GOOGLE_CLIENT_ID!,
-        scope: 'https://www.googleapis.com/auth/adwords',
-        callback: async (response) => {
-          if (response.code) {
-            // Exchange code for access token (implement token exchange in backend)
-            const accessToken = await exchangeCodeForToken(response.code);
-            const accounts = await adAccountsService.fetchGoogleAdAccounts(accessToken);
-            
-            if (userId) {
-              await adAccountsService.storeConnectedAccount(userId, 'google', accounts);
-              setConnectedAccounts(prev => ({ ...prev, google: accounts }));
+      if (window.google && window.google.accounts) {
+        const client = window.google.accounts.oauth2.initCodeClient({
+          client_id: import.meta.env.VITE_GOOGLE_CLIENT_ID || '',
+          scope: 'https://www.googleapis.com/auth/adwords',
+          callback: async (response: { code: string }) => {
+            if (response.code) {
+              // Exchange code for access token (implement token exchange in backend)
+              const accessToken = await exchangeCodeForToken(response.code);
+              const accounts = await adAccountsService.fetchGoogleAdAccounts(accessToken);
               
-              toast({
-                title: 'Success',
-                description: 'Google Ads accounts connected successfully',
-              });
+              if (userId) {
+                await adAccountsService.storeConnectedAccount(userId, 'google', accounts);
+                setConnectedAccounts(prev => ({ ...prev, google: accounts }));
+                
+                toast({
+                  title: 'Success',
+                  description: 'Google Ads accounts connected successfully',
+                });
+              }
             }
-          }
-        },
-      });
-      
-      client.requestCode();
-    } catch (error) {
+          },
+        });
+        
+        client.requestCode();
+      } else {
+        throw new Error('Google SDK not loaded');
+      }
+    } catch (error: any) {
       console.error('Error connecting Google account:', error);
       toast({
         title: 'Error',
@@ -219,4 +243,4 @@ const exchangeCodeForToken = async (code: string): Promise<string> => {
   return data.access_token;
 };
 
-export default AdAccountsConnection; 
+export default AdAccountsConnection;

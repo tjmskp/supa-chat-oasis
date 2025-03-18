@@ -1,3 +1,4 @@
+
 interface AdSenseAccount {
   id: string;
   name: string;
@@ -132,7 +133,7 @@ class GoogleAdsService {
   }
 
   // Method to suggest upgrade to Ad Manager
-  async suggestAdManagerUpgrade(adSenseMetrics: AdSenseReport[]): boolean {
+  async suggestAdManagerUpgrade(adSenseMetrics: AdSenseReport[]): Promise<boolean> {
     // Logic to determine if the publisher should upgrade to Ad Manager
     const averageImpressions = adSenseMetrics.reduce((acc, curr) => acc + curr.impressions, 0) / adSenseMetrics.length;
     const averageEarnings = adSenseMetrics.reduce((acc, curr) => acc + curr.earnings, 0) / adSenseMetrics.length;
@@ -142,4 +143,4 @@ class GoogleAdsService {
   }
 }
 
-export const googleAdsService = new GoogleAdsService(); 
+export const googleAdsService = new GoogleAdsService();
